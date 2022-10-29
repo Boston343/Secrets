@@ -1,7 +1,7 @@
 //jshint esversion:6
 // npm and express includes
 import express from "express"; // npm install express
-// import mongoose from "mongoose";
+import mongoose from "mongoose";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -29,20 +29,35 @@ app.use(express.static(path.join(__dirname, "/public")));
 // ------------------------------- Mongoose Setup ------------------------------------
 // -----------------------------------------------------------------------------------
 // connect to MongoDB - local connection
-// mongoose.connect("mongodb://localhost:27017/blogWebsiteDB", {
-//     useNewUrlParser: true,
-// });
+mongoose.connect("mongodb://localhost:27017/userDB", {
+    useNewUrlParser: true,
+});
 // connect to MongoDB Atlas (the cloud)
 // mongoose.connect(
 //     "mongodb+srv://" +
 //         process.env.MONGODB_USER +
 //         ":" +
 //         process.env.MONGODB_PASS +
-//         "@cluster0.ovomich.mongodb.net/blogWebsiteDB?retryWrites=true&w=majority",
+//         "@cluster0.ovomich.mongodb.net/userDB?retryWrites=true&w=majority",
 //     {
 //         useNewUrlParser: true,
 //     }
 // );
+
+// schema
+const userSchema = new mongoose.Schema({
+    email: {
+        type: String,
+        required: [true, "ERROR: You need a username."],
+    },
+    password: {
+        type: String,
+        required: [true, "ERROR: You need a password"],
+    },
+});
+
+// model: mongoose will auto make it plural "users"
+const User = mongoose.model("User", userSchema);
 
 // -----------------------------------------------------------------------------------
 // ---------------------------------- Listening --------------------------------------
@@ -54,3 +69,81 @@ app.listen(port, () => {
 // -----------------------------------------------------------------------------------
 // ------------------------------------ Routes ---------------------------------------
 // -----------------------------------------------------------------------------------
+// homepage
+app.route("/").get((req, res) => {
+    res.render("home");
+});
+
+// -----------------------------------------------------------------------------------
+app.route("/register")
+    // GET /register will show the register page
+    .get((req, res) => {
+        res.render("register");
+    })
+
+    // POST /register will register a new user
+    .post((req, res) => {
+        // determine if user already exists
+        User.findOne(
+            {
+                email: {
+                    // regex for the entire string (not just part matching), and ignoring case
+                    $regex: "^" + req.body.username + "$",
+                    $options: "i",
+                },
+            },
+            // findOne callback
+            (err, user) => {
+                if (err) {
+                    console.log(err);
+                } else {
+                    if (user) {
+                        // notify user email exists
+                        console.log(
+                            "email: " + req.body.username + " already exists."
+                        );
+                        res.redirect("/");
+                    } else {
+                        // user does not exist, so create it
+                        const newUser = new User({
+                            email: req.body.username,
+                            password: req.body.password,
+                        });
+
+                        // save new user
+                        newUser.save((err) => {
+                            if (err) {
+                                console.log(err);
+                                res.redirect("/register");
+                            } else {
+                                res.redirect("/secrets");
+                            }
+                        });
+                    }
+                }
+            }
+        );
+    });
+
+// -----------------------------------------------------------------------------------
+app.route("/login")
+    // GET /login will show the login page
+    .get((req, res) => {
+        res.render("login");
+    })
+
+    // POST /login will attempt to login the user
+    .post((req, res) => {
+        const email = req.body.username;
+        const password = req.body.password;
+    });
+
+// -----------------------------------------------------------------------------------
+app.route("/secrets")
+
+    // GET /secrets will show the secrets page
+    .get((req, res) => {
+        res.render("secrets");
+    })
+    // POST /secrets creates a new secret
+    .post((req, res) => {});
