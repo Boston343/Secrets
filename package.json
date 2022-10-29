@@ -1,0 +1,25 @@
+{
+    "name": "secrets",
+    "version": "1.0.0",
+    "description": "Authentication and Security Examples. This uses express.js, EJS, and Mongoose.",
+    "main": "app.js",
+    "type": "module",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/Boston343/Secrets.git"
+    },
+    "author": "Reap3r",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/Boston343/Secrets/issues"
+    },
+    "homepage": "https://github.com/Boston343/Secrets#readme",
+    "dependencies": {
+        "dotenv": "^16.0.3",
+        "ejs": "^3.1.8",
+        "express": "^4.18.2"
+    }
+}
