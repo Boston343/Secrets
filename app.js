@@ -2,6 +2,7 @@
 // npm and express includes
 import express from "express"; // npm install express
 import mongoose from "mongoose";
+import encrypt from "mongoose-encryption";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -52,9 +53,13 @@ const userSchema = new mongoose.Schema({
     },
     password: {
         type: String,
-        required: [true, "ERROR: You need a password"],
+        required: [true, "ERROR: You need a password."],
     },
 });
+
+// setup database encryption
+const secret = process.env.ENC_KEY;
+userSchema.plugin(encrypt, { secret: secret, encryptedFields: ["password"] });
 
 // model: mongoose will auto make it plural "users"
 const User = mongoose.model("User", userSchema);
