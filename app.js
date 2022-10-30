@@ -78,7 +78,7 @@ app.route("/").get((req, res) => {
 app.route("/register")
     // GET /register will show the register page
     .get((req, res) => {
-        res.render("register");
+        res.render("register", { alertMsg: "" });
     })
 
     // POST /register will register a new user
@@ -118,9 +118,11 @@ app.route("/register")
                         newUser.save((err) => {
                             if (err) {
                                 console.log(err);
-                                res.redirect("/register");
+                                const alertMsg =
+                                    "There was an error. Please try again.";
+                                res.render("register", { alertMsg: alertMsg });
                             } else {
-                                res.redirect("/secrets");
+                                res.render("secrets");
                             }
                         });
                     }
@@ -133,21 +135,56 @@ app.route("/register")
 app.route("/login")
     // GET /login will show the login page
     .get((req, res) => {
-        res.render("login");
+        res.render("login", { alertMsg: "" });
     })
 
     // POST /login will attempt to login the user
     .post((req, res) => {
-        const email = req.body.username;
-        const password = req.body.password;
+        User.findOne(
+            {
+                email: {
+                    // regex for the entire string (not just part matching), and ignoring case
+                    $regex: "^" + req.body.username + "$",
+                    $options: "i",
+                },
+            },
+            // findOne callback
+            (err, user) => {
+                if (err) {
+                    console.log(err);
+                } else {
+                    if (user) {
+                        if (user.password === req.body.password) {
+                            // user exists and password is correct
+                            res.render("secrets");
+                        } else {
+                            // user exists but password is incorrect
+                            const alertMsg =
+                                "Incorrect password. Please try again.";
+                            res.render("login", { alertMsg: alertMsg });
+                        }
+                    } else {
+                        const alertMsg =
+                            "The user account '" +
+                            req.body.username +
+                            "' does not exist! Please register.";
+                        res.render("home", { alertMsg: alertMsg });
+                    }
+                }
+            }
+        );
     });
 
 // -----------------------------------------------------------------------------------
 app.route("/secrets")
 
-    // GET /secrets will show the secrets page
-    .get((req, res) => {
-        res.render("secrets");
-    })
     // POST /secrets creates a new secret
     .post((req, res) => {});
+
+// -----------------------------------------------------------------------------------
+app.route("/logout")
+
+    // GET /logout reloads the homepage
+    .get((req, res) => {
+        res.redirect("/");
+    });
