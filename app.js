@@ -1,9 +1,11 @@
 //jshint esversion:6
-// npm and express includes
+import dotenv from "dotenv";
+dotenv.config(); // gets the .env data for use with process.env.
 import express from "express"; // npm install express
 import mongoose from "mongoose";
-import encrypt from "mongoose-encryption";
-import dotenv from "dotenv";
+import bcrypt from "bcrypt";
+const saltRounds = 10;
+
 import path from "path";
 import { fileURLToPath } from "url";
 // import _ from "lodash";
@@ -12,7 +14,6 @@ import { fileURLToPath } from "url";
 // local includes
 // import * as date from "./src/date.js";
 
-dotenv.config(); // gets the .env data for use with process.env.
 const app = express();
 app.set("view engine", "ejs"); // using EJS
 const port = process.env.PORT || 3000;
@@ -32,6 +33,8 @@ app.use(express.static(path.join(__dirname, "/public")));
 // connect to MongoDB - local connection
 mongoose.connect("mongodb://localhost:27017/userDB", {
     useNewUrlParser: true,
+    useUnifiedTopology: true,
+    family: 4,
 });
 // connect to MongoDB Atlas (the cloud)
 // mongoose.connect(
@@ -56,10 +59,6 @@ const userSchema = new mongoose.Schema({
         required: [true, "ERROR: You need a password."],
     },
 });
-
-// setup database encryption
-const secret = process.env.ENC_KEY;
-userSchema.plugin(encrypt, { secret: secret, encryptedFields: ["password"] });
 
 // model: mongoose will auto make it plural "users"
 const User = mongoose.model("User", userSchema);
@@ -114,22 +113,36 @@ app.route("/register")
                         res.render("home", { alertMsg: alertMsg });
                     } else {
                         // user does not exist, so create it
-                        const newUser = new User({
-                            email: req.body.username,
-                            password: req.body.password,
-                        });
+                        // first create salt and hash of password
+                        bcrypt.hash(
+                            req.body.password,
+                            saltRounds,
+                            (err, hash) => {
+                                if (err) {
+                                    console.log(err);
+                                } else {
+                                    // we now have the hash so create new user
+                                    const newUser = new User({
+                                        email: req.body.username,
+                                        password: hash,
+                                    });
 
-                        // save new user
-                        newUser.save((err) => {
-                            if (err) {
-                                console.log(err);
-                                const alertMsg =
-                                    "There was an error. Please try again.";
-                                res.render("register", { alertMsg: alertMsg });
-                            } else {
-                                res.render("secrets");
+                                    // save new user
+                                    newUser.save((err) => {
+                                        if (err) {
+                                            console.log(err);
+                                            const alertMsg =
+                                                "There was an error. Please try again.";
+                                            res.render("register", {
+                                                alertMsg: alertMsg,
+                                            });
+                                        } else {
+                                            res.render("secrets");
+                                        }
+                                    });
+                                }
                             }
-                        });
+                        );
                     }
                 }
             }
@@ -159,15 +172,28 @@ app.route("/login")
                     console.log(err);
                 } else {
                     if (user) {
-                        if (user.password === req.body.password) {
-                            // user exists and password is correct
-                            res.render("secrets");
-                        } else {
-                            // user exists but password is incorrect
-                            const alertMsg =
-                                "Incorrect password. Please try again.";
-                            res.render("login", { alertMsg: alertMsg });
-                        }
+                        // user exists so now check password
+                        bcrypt.compare(
+                            req.body.password,
+                            user.password,
+                            (err, correct) => {
+                                if (err) {
+                                    console.log(err);
+                                } else {
+                                    if (correct) {
+                                        // user exists and password is correct
+                                        res.render("secrets");
+                                    } else {
+                                        // user exists but password is incorrect
+                                        const alertMsg =
+                                            "Incorrect password. Please try again.";
+                                        res.render("login", {
+                                            alertMsg: alertMsg,
+                                        });
+                                    }
+                                }
+                            }
+                        );
                     } else {
                         const alertMsg =
                             "The user account '" +
