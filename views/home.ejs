@@ -1,8 +1,15 @@
 <%- include('partials/header') %>
 
-
 <div class="jumbotron centered">
   <div class="container">
+    <% if (alertMsg.length) { %>
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            This user account already exists! Please log in.
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    <% } %>
     <i class="fas fa-key fa-6x"></i>
     <h1 class="display-3">Secrets</h1>
     <p class="lead">Don't keep your secrets, share them anonymously!</p>

@@ -71,7 +71,7 @@ app.listen(port, () => {
 // -----------------------------------------------------------------------------------
 // homepage
 app.route("/").get((req, res) => {
-    res.render("home");
+    res.render("home", { alertMsg: "" });
 });
 
 // -----------------------------------------------------------------------------------
@@ -100,9 +100,13 @@ app.route("/register")
                     if (user) {
                         // notify user email exists
                         console.log(
-                            "email: " + req.body.username + " already exists."
+                            "email: '" + req.body.username + "' already exists."
                         );
-                        res.redirect("/");
+                        const alertMsg =
+                            "The user account '" +
+                            req.body.username +
+                            "' already exists! Please log in.";
+                        res.render("home", { alertMsg: alertMsg });
                     } else {
                         // user does not exist, so create it
                         const newUser = new User({
