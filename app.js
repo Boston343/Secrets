@@ -3,16 +3,17 @@ import dotenv from "dotenv";
 dotenv.config(); // gets the .env data for use with process.env.
 import express from "express"; // npm install express
 import mongoose from "mongoose";
+import session from "express-session";
+import passport from "passport";
+import passportLocalMongoose from "passport-local-mongoose";
 import bcrypt from "bcrypt";
 const saltRounds = 10;
 
 import path from "path";
 import { fileURLToPath } from "url";
+import { nextTick } from "process";
 // import _ from "lodash";
 // import https from "https"; // for forming external get requests
-
-// local includes
-// import * as date from "./src/date.js";
 
 const app = express();
 app.set("view engine", "ejs"); // using EJS
@@ -27,14 +28,33 @@ const __dirname = path.dirname(__filename);
 //      start looking for those files.
 app.use(express.static(path.join(__dirname, "/public")));
 
+// setup session for the app
+var sess = {
+  secret: process.env.SESSION_KEY,
+  resave: false,
+  saveUninitialized: true,
+  cookie: {}, // need unsecure cookies for local testing (http)
+};
+
+// if we're in production then use secure cookies (https)
+if (app.get("env") === "production") {
+  app.set("trust proxy", 1); // trust first proxy
+  sess.cookie.secure = true; // server secure cookies
+}
+
+app.use(session(sess));
+
+app.use(passport.initialize());
+app.use(passport.session());
+
 // -----------------------------------------------------------------------------------
 // ------------------------------- Mongoose Setup ------------------------------------
 // -----------------------------------------------------------------------------------
 // connect to MongoDB - local connection
 mongoose.connect("mongodb://localhost:27017/userDB", {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    family: 4,
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  family: 4,
 });
 // connect to MongoDB Atlas (the cloud)
 // mongoose.connect(
@@ -50,24 +70,32 @@ mongoose.connect("mongodb://localhost:27017/userDB", {
 
 // schema
 const userSchema = new mongoose.Schema({
-    email: {
-        type: String,
-        required: [true, "ERROR: You need a username."],
-    },
-    password: {
-        type: String,
-        required: [true, "ERROR: You need a password."],
-    },
+  username: {
+    type: String,
+    required: [true, "ERROR: You need a username."],
+  },
+  password: {
+    type: String,
+    // required: [true, "ERROR: You need a password."],
+  },
 });
+
+// use plugin for hashing and salting passwords, and to save users into DB
+userSchema.plugin(passportLocalMongoose);
 
 // model: mongoose will auto make it plural "users"
 const User = mongoose.model("User", userSchema);
+
+// have passport make use of passport-local-mongoose
+passport.use(User.createStrategy());
+passport.serializeUser(User.serializeUser());
+passport.deserializeUser(User.deserializeUser());
 
 // -----------------------------------------------------------------------------------
 // ---------------------------------- Listening --------------------------------------
 // -----------------------------------------------------------------------------------
 app.listen(port, () => {
-    console.log(`Server is listening on port ${port}`);
+  console.log(`Server is listening on port ${port}`);
 });
 
 // -----------------------------------------------------------------------------------
@@ -75,147 +103,131 @@ app.listen(port, () => {
 // -----------------------------------------------------------------------------------
 // homepage
 app.route("/").get((req, res) => {
-    res.render("home", { alertMsg: "" });
+  res.render("home", { alertMsg: "" });
 });
 
 // -----------------------------------------------------------------------------------
-app.route("/register")
-    // GET /register will show the register page
-    .get((req, res) => {
-        res.render("register", { alertMsg: "" });
-    })
+app
+  .route("/register")
+  // GET /register will show the register page
+  .get((req, res) => {
+    res.render("register", { alertMsg: "" });
+  })
 
-    // POST /register will register a new user
-    .post((req, res) => {
-        // determine if user already exists
-        User.findOne(
-            {
-                email: {
-                    // regex for the entire string (not just part matching), and ignoring case
-                    $regex: "^" + req.body.username + "$",
-                    $options: "i",
-                },
-            },
-            // findOne callback
-            (err, user) => {
+  // POST /register will register a new user
+  .post((req, res) => {
+    // determine if user already exists
+    User.findOne(
+      {
+        username: {
+          // regex for the entire string (not just part matching), and ignoring case
+          $regex: "^" + req.body.username + "$",
+          $options: "i",
+        },
+      },
+      // findOne callback
+      (err, user) => {
+        if (err) {
+          console.log(err);
+        } else {
+          if (user) {
+            // notify user that the email already exists
+            console.log(
+              "username: '" + req.body.username + "' already exists."
+            );
+            const alertMsg =
+              "The user account '" +
+              req.body.username +
+              "' already exists! Please log in.";
+            res.render("home", { alertMsg: alertMsg });
+          } else {
+            // user does not exist, so create it
+            User.register(
+              { username: req.body.username },
+              req.body.password,
+              (err, user) => {
                 if (err) {
-                    console.log(err);
+                  // some sort of error. Let user try again
+                  console.log(err);
+                  const alertMsg = "There was an error. Please try again.";
+                  res.render("register", { alertMsg: alertMsg });
                 } else {
-                    if (user) {
-                        // notify user email exists
-                        console.log(
-                            "email: '" + req.body.username + "' already exists."
-                        );
-                        const alertMsg =
-                            "The user account '" +
-                            req.body.username +
-                            "' already exists! Please log in.";
-                        res.render("home", { alertMsg: alertMsg });
-                    } else {
-                        // user does not exist, so create it
-                        // first create salt and hash of password
-                        bcrypt.hash(
-                            req.body.password,
-                            saltRounds,
-                            (err, hash) => {
-                                if (err) {
-                                    console.log(err);
-                                } else {
-                                    // we now have the hash so create new user
-                                    const newUser = new User({
-                                        email: req.body.username,
-                                        password: hash,
-                                    });
-
-                                    // save new user
-                                    newUser.save((err) => {
-                                        if (err) {
-                                            console.log(err);
-                                            const alertMsg =
-                                                "There was an error. Please try again.";
-                                            res.render("register", {
-                                                alertMsg: alertMsg,
-                                            });
-                                        } else {
-                                            res.render("secrets");
-                                        }
-                                    });
-                                }
-                            }
-                        );
-                    }
+                  // user was created, authenticate them and go to secrets page
+                  passport.authenticate("local")(req, res, () => {
+                    res.redirect("/secrets");
+                  });
                 }
-            }
-        );
-    });
+              }
+            );
+          }
+        }
+      }
+    );
+  });
 
 // -----------------------------------------------------------------------------------
-app.route("/login")
-    // GET /login will show the login page
-    .get((req, res) => {
-        res.render("login", { alertMsg: "" });
-    })
+app
+  .route("/login")
+  // GET /login will show the login page
+  .get((req, res) => {
+    res.render("login", { alertMsg: "" });
+  })
 
-    // POST /login will attempt to login the user
-    .post((req, res) => {
-        User.findOne(
-            {
-                email: {
-                    // regex for the entire string (not just part matching), and ignoring case
-                    $regex: "^" + req.body.username + "$",
-                    $options: "i",
-                },
-            },
-            // findOne callback
-            (err, user) => {
-                if (err) {
-                    console.log(err);
-                } else {
-                    if (user) {
-                        // user exists so now check password
-                        bcrypt.compare(
-                            req.body.password,
-                            user.password,
-                            (err, correct) => {
-                                if (err) {
-                                    console.log(err);
-                                } else {
-                                    if (correct) {
-                                        // user exists and password is correct
-                                        res.render("secrets");
-                                    } else {
-                                        // user exists but password is incorrect
-                                        const alertMsg =
-                                            "Incorrect password. Please try again.";
-                                        res.render("login", {
-                                            alertMsg: alertMsg,
-                                        });
-                                    }
-                                }
-                            }
-                        );
-                    } else {
-                        const alertMsg =
-                            "The user account '" +
-                            req.body.username +
-                            "' does not exist! Please register.";
-                        res.render("home", { alertMsg: alertMsg });
-                    }
-                }
-            }
-        );
-    });
+  // POST /login will attempt to login the user
+  .post((req, res, next) => {
+    passport.authenticate("local", (err, user, info) => {
+      if (err) {
+        return next(err);
+      }
+      if (!user) {
+        const alertMsg = "Invalid login credentials. Please try again.";
+        return res.render("login", { alertMsg: alertMsg });
+      } else {
+        // for whatever reason, with this method of authentication, I have to manually log in
+        req.login(user, (err) => {
+          if (err) {
+            return next(err);
+          }
+          return res.redirect("/secrets");
+        });
+      }
+    })(req, res, next); // this passes those parameters to the passport.authenticate function
+  });
 
 // -----------------------------------------------------------------------------------
-app.route("/secrets")
+app
+  .route("/secrets")
 
-    // POST /secrets creates a new secret
-    .post((req, res) => {});
+  .get((req, res) => {
+    // make it so this page can't be cached
+    res.set(
+      "Cache-Control",
+      "no-cache, private, no-store, must-revalidate, max-stal   e=0, post-check=0, pre-check=0"
+    );
+
+    // if user is authenticated, we display the secrets page
+    if (req.isAuthenticated()) {
+      res.render("secrets");
+    } else {
+      const alertMsg = "You need to log in to view the secrets!";
+      res.render("login", { alertMsg: alertMsg });
+    }
+  })
+
+  // POST /secrets creates a new secret
+  .post((req, res) => {});
 
 // -----------------------------------------------------------------------------------
-app.route("/logout")
+app
+  .route("/logout")
 
-    // GET /logout reloads the homepage
-    .get((req, res) => {
+  // GET /logout reloads the homepage
+  .get((req, res) => {
+    req.logout((err) => {
+      if (err) {
+        console.log(err);
+      } else {
         res.redirect("/");
+      }
     });
+  });
