@@ -14,6 +14,7 @@ Homepage is at `localhost:3000`. You can register and then login to view the sec
     -   passport
     -   passport-local
     -   passport-local-mongoose
+    -   passport-google-oauth20
     -   dotenv
     -   lodash 
 -   MongoDB installed. You will need to install the free community server, as well as mongo shell
@@ -22,6 +23,9 @@ Homepage is at `localhost:3000`. You can register and then login to view the sec
         -   https://www.mongodb.com/try/download/shell
     -   You will then need to add both to your "PATH" environment variable
     -   You can then start your local MongoDB with the command "mongod", and the shell can be accessed with command "mongosh"
+-   Google 0Auth 2.0
+    -   Authentication / login using Google login
+        -   Requires you to have a project created in the [Google Developers Console](https://console.developers.google.com/)
 
 ## Dev Dependencies
 
@@ -33,6 +37,7 @@ Homepage is at `localhost:3000`. You can register and then login to view the sec
 -   Passport
     -   Passwords are salted and hashed before being stored in user database
     -   login, and logout implemented with express-session
+    -   Google 0Auth 2.0 implemented using passport-google-oauth20
 -   Mongoose
     -   Connecting to MongoDB Atlas, as well as local (commented out)
     -   CRUD operations
