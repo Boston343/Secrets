@@ -11,6 +11,7 @@ Homepage is at `localhost:3000`. You can register and then login to view the sec
     -   express-session
     -   ejs
     -   mongoose
+    -   mongoose-findorcreate
     -   passport
     -   passport-local
     -   passport-local-mongoose
