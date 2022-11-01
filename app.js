@@ -73,8 +73,9 @@ mongoose.connect("mongodb://localhost:27017/userDB", {
 const userSchema = new mongoose.Schema({
   username: {
     type: String,
-    required: [true, "ERROR: You need a username."],
+    // required: [true, "ERROR: You need a username."],
   },
+  googleId: String,
   password: {
     type: String,
     // required: [true, "ERROR: You need a password."],
@@ -92,8 +93,17 @@ const User = mongoose.model("User", userSchema);
 
 // have passport make use of passport-local-mongoose
 passport.use(User.createStrategy());
-passport.serializeUser(User.serializeUser());
-passport.deserializeUser(User.deserializeUser());
+// passport.serializeUser(User.serializeUser());
+// passport.deserializeUser(User.deserializeUser());
+
+// general serialize and deserialize functions
+passport.serializeUser(function (user, done) {
+  done(null, user);
+});
+
+passport.deserializeUser(function (user, done) {
+  done(null, user);
+});
 
 // -----------------------------------------------------------------------------------
 // Google 0Auth
@@ -107,6 +117,7 @@ passport.use(
       // state: true,
     },
     function (accessToken, refreshToken, profile, cb) {
+      console.log(profile);
       User.findOrCreate({ googleId: profile.id }, function (err, user) {
         return cb(err, user);
       });
@@ -222,6 +233,18 @@ app
   .route("/auth/google")
 
   .get(passport.authenticate("google", { scope: ["profile"] }));
+
+// -----------------------------------------------------------------------------------
+app
+  .route("/auth/google/secrets")
+
+  .get(
+    passport.authenticate("google", { failureRedirect: "/login" }),
+    function (req, res) {
+      // Successful authentication, redirect secrets.
+      res.redirect("/secrets");
+    }
+  );
 
 // -----------------------------------------------------------------------------------
 app
