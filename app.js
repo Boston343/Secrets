@@ -75,11 +75,12 @@ const userSchema = new mongoose.Schema({
     type: String,
     // required: [true, "ERROR: You need a username."],
   },
-  googleId: String,
   password: {
     type: String,
     // required: [true, "ERROR: You need a password."],
   },
+  googleId: String,
+  name: String,
 });
 
 // use plugin for hashing and salting passwords, and to save users into DB
@@ -93,16 +94,20 @@ const User = mongoose.model("User", userSchema);
 
 // have passport make use of passport-local-mongoose
 passport.use(User.createStrategy());
-// passport.serializeUser(User.serializeUser());
+// passport.serializeUser(User.serializeUser());      // these only work for local users (need username)
 // passport.deserializeUser(User.deserializeUser());
 
-// general serialize and deserialize functions
+// general serialize and deserialize functions that should always work as there will always be user._id
 passport.serializeUser(function (user, done) {
-  done(null, user);
+  done(null, user._id);
+  // if you use Model.username as your idAttribute maybe you'd want
+  // done(null, user.username);
 });
 
-passport.deserializeUser(function (user, done) {
-  done(null, user);
+passport.deserializeUser(function (id, done) {
+  User.findById(id, function (err, user) {
+    done(err, user);
+  });
 });
 
 // -----------------------------------------------------------------------------------
@@ -118,9 +123,12 @@ passport.use(
     },
     function (accessToken, refreshToken, profile, cb) {
       console.log(profile);
-      User.findOrCreate({ googleId: profile.id }, function (err, user) {
-        return cb(err, user);
-      });
+      User.findOrCreate(
+        { googleId: profile.id, name: profile.displayName },
+        function (err, user) {
+          return cb(err, user);
+        }
+      );
     }
   )
 );
