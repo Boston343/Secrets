@@ -6,12 +6,11 @@ import mongoose from "mongoose";
 import session from "express-session";
 import passport from "passport";
 import passportLocalMongoose from "passport-local-mongoose";
-import bcrypt from "bcrypt";
-const saltRounds = 10;
+import GoogleStrategy from "passport-google-oauth20";
+import findOrCreate from "mongoose-findorcreate";
 
 import path from "path";
 import { fileURLToPath } from "url";
-import { nextTick } from "process";
 // import _ from "lodash";
 // import https from "https"; // for forming external get requests
 
@@ -42,8 +41,10 @@ if (app.get("env") === "production") {
   sess.cookie.secure = true; // server secure cookies
 }
 
+// session must be created above authentication setup
 app.use(session(sess));
 
+// normal user login stuff
 app.use(passport.initialize());
 app.use(passport.session());
 
@@ -83,6 +84,9 @@ const userSchema = new mongoose.Schema({
 // use plugin for hashing and salting passwords, and to save users into DB
 userSchema.plugin(passportLocalMongoose);
 
+// user other plugin for a findOrCreate function for mongoose
+userSchema.plugin(findOrCreate);
+
 // model: mongoose will auto make it plural "users"
 const User = mongoose.model("User", userSchema);
 
@@ -90,6 +94,25 @@ const User = mongoose.model("User", userSchema);
 passport.use(User.createStrategy());
 passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
+
+// -----------------------------------------------------------------------------------
+// Google 0Auth
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      callbackURL: "http://localhost:3000/auth/google/secrets",
+      // scope: ["profile"],
+      // state: true,
+    },
+    function (accessToken, refreshToken, profile, cb) {
+      User.findOrCreate({ googleId: profile.id }, function (err, user) {
+        return cb(err, user);
+      });
+    }
+  )
+);
 
 // -----------------------------------------------------------------------------------
 // ---------------------------------- Listening --------------------------------------
@@ -175,7 +198,7 @@ app
 
   // POST /login will attempt to login the user
   .post((req, res, next) => {
-    passport.authenticate("local", (err, user, info) => {
+    passport.authenticate("local", (err, user) => {
       if (err) {
         return next(err);
       }
@@ -193,6 +216,12 @@ app
       }
     })(req, res, next); // this passes those parameters to the passport.authenticate function
   });
+
+// -----------------------------------------------------------------------------------
+app
+  .route("/auth/google")
+
+  .get(passport.authenticate("google", { scope: ["profile"] }));
 
 // -----------------------------------------------------------------------------------
 app
