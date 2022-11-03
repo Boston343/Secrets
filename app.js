@@ -158,6 +158,15 @@ app
 
   // POST /register will register a new user
   .post((req, res) => {
+    // make sure email & pass field aren't empty
+    if (req.body.username === "") {
+      const alertMsg = "Please enter your email.";
+      return res.render("register", { alertMsg: alertMsg });
+    }
+    if (req.body.password === "") {
+      const alertMsg = "Please enter a password.";
+      return res.render("register", { alertMsg: alertMsg });
+    }
     // determine if user already exists
     User.findOne(
       {
