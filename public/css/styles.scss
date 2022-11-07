@@ -1,5 +1,8 @@
+$shadow: rgba(147, 147, 147, 0.5);
+$off-white: #e8ecef;
+
 body {
-  background-color: #e8ecef;
+  background-color: $off-white;
 }
 
 .centered {
@@ -10,21 +13,36 @@ body {
 .secret-text {
   text-align: center;
   font-size: 2rem;
-  color: #fff;
+  color: $off-white;
   background-color: #000;
 }
 
 .google {
   background-color: hsl(7, 71%, 55%);
-  color: white;
+  color: $off-white;
   // transition: 0.15s;
 
   &:focus {
-    box-shadow: 0 0 0 0.2rem rgba(117, 108, 108, 0.5);
+    box-shadow: 0 0 0 0.2rem $shadow;
   }
 
   &:hover {
     background-color: hsl(7, 71%, 45%);
+    color: $off-white;
+  }
+}
+
+.facebook {
+  background-color: hsl(221, 44%, 41%);
+  color: $off-white;
+  // transition: 0.15s;
+
+  &:focus {
+    box-shadow: 0 0 0 0.2rem $shadow;
+  }
+
+  &:hover {
+    background-color: hsl(221, 44%, 31%);
     color: white;
   }
 }

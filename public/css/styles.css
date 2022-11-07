@@ -10,18 +10,30 @@ body {
 .secret-text {
   text-align: center;
   font-size: 2rem;
-  color: #fff;
+  color: #e8ecef;
   background-color: #000;
 }
 
 .google {
   background-color: hsl(7deg, 71%, 55%);
-  color: white;
+  color: #e8ecef;
 }
 .google:focus {
-  box-shadow: 0 0 0 0.2rem rgba(117, 108, 108, 0.5);
+  box-shadow: 0 0 0 0.2rem rgba(147, 147, 147, 0.5);
 }
 .google:hover {
   background-color: hsl(7deg, 71%, 45%);
+  color: #e8ecef;
+}
+
+.facebook {
+  background-color: hsl(221deg, 44%, 41%);
+  color: #e8ecef;
+}
+.facebook:focus {
+  box-shadow: 0 0 0 0.2rem rgba(147, 147, 147, 0.5);
+}
+.facebook:hover {
+  background-color: hsl(221deg, 44%, 31%);
   color: white;
 }/*# sourceMappingURL=styles.css.map */
