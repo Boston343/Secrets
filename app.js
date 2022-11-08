@@ -53,22 +53,22 @@ app.use(passport.session());
 // ------------------------------- Mongoose Setup ------------------------------------
 // -----------------------------------------------------------------------------------
 // connect to MongoDB - local connection
-mongoose.connect("mongodb://localhost:27017/userDB", {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-  family: 4,
-});
+// mongoose.connect("mongodb://localhost:27017/userDB", {
+//   useNewUrlParser: true,
+//   useUnifiedTopology: true,
+//   family: 4,
+// });
 // connect to MongoDB Atlas (the cloud)
-// mongoose.connect(
-//     "mongodb+srv://" +
-//         process.env.MONGODB_USER +
-//         ":" +
-//         process.env.MONGODB_PASS +
-//         "@cluster0.ovomich.mongodb.net/userDB?retryWrites=true&w=majority",
-//     {
-//         useNewUrlParser: true,
-//     }
-// );
+mongoose.connect(
+  "mongodb+srv://" +
+    process.env.MONGODB_USER +
+    ":" +
+    process.env.MONGODB_PASS +
+    "@cluster0.ovomich.mongodb.net/secretsDB?retryWrites=true&w=majority",
+  {
+    useNewUrlParser: true,
+  }
+);
 
 // schema
 const userSchema = new mongoose.Schema({
@@ -119,13 +119,17 @@ passport.use(
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
       callbackURL: "http://localhost:3000/auth/google/secrets",
-      // scope: ["profile"],
+      // scope: ["profile", "email"],
       // state: true,
     },
     function (accessToken, refreshToken, profile, cb) {
       console.log(profile);
       User.findOrCreate(
-        { googleId: profile.id, name: profile.displayName },
+        {
+          username: profile._json.email,
+          googleId: profile.id,
+          name: profile.displayName,
+        },
         function (err, user) {
           return cb(err, user);
         }
@@ -271,7 +275,8 @@ app
 app
   .route("/auth/google")
 
-  .get(passport.authenticate("google", { scope: ["profile"] }));
+  // get profile, and email (email not included with normal profile)
+  .get(passport.authenticate("google", { scope: ["profile", "email"] }));
 
 // -----------------------------------------------------------------------------------
 app

@@ -27,13 +27,13 @@ body {
 }
 
 .facebook {
-  background-color: hsl(221deg, 44%, 41%);
+  background-color: hsl(214deg, 89%, 52%);
   color: #e8ecef;
 }
 .facebook:focus {
   box-shadow: 0 0 0 0.2rem rgba(147, 147, 147, 0.5);
 }
 .facebook:hover {
-  background-color: hsl(221deg, 44%, 31%);
+  background-color: hsl(214deg, 89%, 42%);
   color: white;
 }/*# sourceMappingURL=styles.css.map */
