@@ -82,6 +82,7 @@ const userSchema = new mongoose.Schema({
   },
   googleId: String,
   name: String,
+  secrets: [String],
 });
 
 // use plugin for hashing and salting passwords, and to save users into DB
@@ -315,6 +316,7 @@ app
 app
   .route("/secrets")
 
+  // GET /secrets opens the secrets page if the user is authenticated
   .get((req, res) => {
     // make it so this page can't be cached
     res.set(
@@ -322,17 +324,57 @@ app
       "no-cache, private, no-store, must-revalidate, max-stal   e=0, post-check=0, pre-check=0"
     );
 
-    // if user is authenticated, we display the secrets page
+    // find all users that have secrets
+    //  this checks if secrets[0] has a value, which means the user has a secret
+    User.find({ "secrets.0": { $exists: true } }, (err, usersWithSecrets) => {
+      if (err) {
+        console.log(err);
+        return err;
+      }
+      // this gives us all users that have secrets
+      res.render("secrets", { users: usersWithSecrets });
+    });
+  });
+
+// -----------------------------------------------------------------------------------
+app
+  .route("/submit")
+
+  // GET /submit opens the submit page for a user to submit a new secret
+  .get((req, res) => {
+    // if user is authenticated, we display the submit page
     if (req.isAuthenticated()) {
-      res.render("secrets");
+      res.render("submit");
     } else {
-      const alertMsg = "You need to log in to view the secrets!";
-      res.render("login", { alertMsg: alertMsg });
+      res.redirect("/login");
     }
   })
 
-  // POST /secrets creates a new secret
-  .post((req, res) => {});
+  // POST /submit adds the new secret to the secrets page
+  .post((req, res) => {
+    const submittedSecret = req.body.secret;
+
+    // req.user returns user info from DB. Most importantly: user._id
+    console.log("User ID: " + req.user._id);
+    console.log("User: " + req.user);
+
+    // don't do anything if nothing was input
+    if (submittedSecret === "") {
+      return res.render("submit");
+    }
+
+    // find user and add secret to secrets array
+    User.findById(req.user._id, (err, foundUser) => {
+      if (err) {
+        console.log(err);
+        return err;
+      }
+      // add secret and reload secrets page
+      foundUser.secrets.push(submittedSecret);
+      foundUser.save();
+      res.redirect("/secrets");
+    });
+  });
 
 // -----------------------------------------------------------------------------------
 app
