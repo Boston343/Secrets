@@ -13,7 +13,7 @@ Sessions are created using express-session for login / logout usage. There are s
   - login, and logout implemented with express-session
   - Google 0Auth 2.0 implemented using passport-google-oauth20
 - Mongoose
-  - Connecting to MongoDB Atlas, as well as local (commented out)
+  - Connecting to MongoDB Atlas, or local MongoDB
   - CRUD operations
 - EJS - Data retreival and manipulation
   - Serving up HTML files with input from server
