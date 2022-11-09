@@ -2,7 +2,9 @@
 
 Authentication and Security Examples. This uses Passport, Mongoose, Express-Session, and EJS.
 
-Homepage is at `localhost:3000`. You can register and then login to view the secret! Password is salted and hashed using passport and passport-local-mongoose, before being stored in MongoDB. Sessions are created using express-session for login / logout usage. There are some alerts for various errors a user may encounter, such as an account already having been created, and for an incorrect password.
+Homepage is at `localhost:3000`. You can register and then login to view the secrets! Password is salted and hashed using passport and passport-local-mongoose, before being stored in MongoDB. If you log in with Google then your password is not stored as it uses 0Auth. Logged in users can create new secrets which will be displayed for all at `/secrets`. 
+
+Sessions are created using express-session for login / logout usage. There are some alerts for various errors a user may encounter, such as an account already having been created, and for an incorrect password.
 
 ## Dependencies
 
@@ -16,6 +18,7 @@ Homepage is at `localhost:3000`. You can register and then login to view the sec
     -   passport-local
     -   passport-local-mongoose
     -   passport-google-oauth20
+    -   passport-facebook
     -   dotenv
     -   lodash 
 -   MongoDB installed. You will need to install the free community server, as well as mongo shell
