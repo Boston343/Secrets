@@ -2,7 +2,7 @@
 
 Authentication and Security Examples. This uses Passport, Mongoose, Express-Session, and EJS.
 
-Homepage is at `https://reap3r-secrets.glitch.me/`. You can register and then login to view the secrets! Password is salted and hashed using passport and passport-local-mongoose, before being stored in MongoDB. If you log in with Google or Facebook then your password is not stored as it uses 0Auth. Logged in users can create new secrets which will be displayed for all at `/secrets`.
+Homepage is at https://reap3r-secrets.glitch.me/. You can register and then login to view the secrets! Password is salted and hashed using passport and passport-local-mongoose, before being stored in MongoDB. If you log in with Google or Facebook then your password is not stored as it uses 0Auth. Logged in users can create new secrets which will be displayed for all at https://reap3r-secrets.glitch.me/secrets.
 
 Sessions are created using express-session for login / logout usage. There are some alerts for various errors a user may encounter, such as an account already having been created, and for an incorrect password.
 
