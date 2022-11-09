@@ -53,7 +53,7 @@ app.use(passport.session());
 // ------------------------------- Mongoose Setup ------------------------------------
 // -----------------------------------------------------------------------------------
 // connect to MongoDB - local connection
-// mongoose.connect("mongodb://localhost:27017/userDB", {
+// mongoose.connect("mongodb://localhost:27017/secretsDB", {
 //   useNewUrlParser: true,
 //   useUnifiedTopology: true,
 //   family: 4,
@@ -81,6 +81,7 @@ const userSchema = new mongoose.Schema({
     // required: [true, "ERROR: You need a password."],
   },
   googleId: String,
+  facebookId: String,
   name: String,
   secrets: [String],
 });
@@ -119,7 +120,8 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: "http://localhost:3000/auth/google/secrets",
+      callbackURL: "https://reap3r-secrets.glitch.me/auth/google/secrets",
+      // callbackURL: "http://localhost:3000/auth/google/secrets",
       // scope: ["profile", "email"],
       // state: true,
     },
@@ -146,15 +148,23 @@ passport.use(
     {
       clientID: process.env.FACEBOOK_APP_ID,
       clientSecret: process.env.FACEBOOK_APP_SECRET,
-      callbackURL: "http://localhost:3000/auth/facebook/secrets",
+      callbackURL: "https://reap3r-secrets.glitch.me/auth/facebook/secrets",
+      // callbackURL: "http://localhost:3000/auth/facebook/secrets",
       // scope: ["public_profile", "email"],
       // state: true,
     },
     function (accessToken, refreshToken, profile, cb) {
       console.log(profile);
-      User.findOrCreate({ facebookId: profile.id }, function (err, user) {
-        return cb(err, user);
-      });
+      User.findOrCreate(
+        {
+          username: profile.email,
+          facebookId: profile.id,
+          name: profile.displayName,
+        },
+        function (err, user) {
+          return cb(err, user);
+        }
+      );
     }
   )
 );
