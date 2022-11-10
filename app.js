@@ -67,6 +67,8 @@ mongoose.connect(
     "@cluster0.ovomich.mongodb.net/secretsDB?retryWrites=true&w=majority",
   {
     useNewUrlParser: true,
+    useUnifiedTopology: true,
+    family: 4,
   }
 );
 
